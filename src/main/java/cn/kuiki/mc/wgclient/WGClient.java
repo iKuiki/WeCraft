@@ -37,6 +37,7 @@ public final class WGClient {
             this.logger.info("Message published");
             sampleClient.disconnect();
             this.logger.info("Disconnected");
+            sampleClient.close();
         } catch (MqttException me) {
             this.logger.info("reason " + me.getReasonCode());
             this.logger.info("msg " + me.getMessage());
