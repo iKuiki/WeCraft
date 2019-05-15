@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - WeCraft",
+            "request": "launch",
+            "mainClass": "cn.kuiki.mc.WeCraft",
+            "projectName": "WeCraft"
+        },
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - App",
+            "request": "launch",
+            "mainClass": "cn.kuiki.mc.App",
+            "projectName": "WeCraft"
+        },
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - App",
+            "request": "launch",
+            "mainClass": "src.main.java.cn.kuiki.mc.App",
+            "projectName": "my-app"
+        }
+    ]
+}
