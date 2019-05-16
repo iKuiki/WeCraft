@@ -1,43 +1,44 @@
 package cn.kuiki.mc.wgclient;
 
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import java.util.logging.Logger;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.lang.Thread;
+import cn.kuiki.mc.WeCraftInf;
 
-public final class WGClient {
+public final class WGClient extends Thread implements MqttCallback {
 
     private Logger logger;
+    private WGConfig config;
+    private LinkedBlockingQueue<String> sendMessageQueue;
+    private WeCraftInf wecraft;
 
-    public WGClient(Logger logger) {
+    public WGClient(WGConfig config, Logger logger, WeCraftInf wecraft) {
+        this.config = config;
         this.logger = logger;
+        this.wecraft = wecraft;
+        this.sendMessageQueue = new LinkedBlockingQueue<String>();
     }
 
-    public void Test() {
-        String topic = "MQTT Examples";
-        String content = "Message from MqttPublishSample";
-        int qos = 2;
-        String broker = "tcp://iot.eclipse.org:1883";
-        String clientId = "JavaSample";
+    public void run() {
+        String clientId = "WeCraft";
         MemoryPersistence persistence = new MemoryPersistence();
-
+        MqttClient mqttClient;
         try {
-            MqttClient sampleClient = new MqttClient(broker, clientId, persistence);
-            MqttConnectOptions connOpts = new MqttConnectOptions();
-            connOpts.setCleanSession(true);
-            this.logger.info("Connecting to broker: " + broker);
-            sampleClient.connect(connOpts);
-            this.logger.info("Connected");
-            this.logger.info("Publishing message: " + content);
-            MqttMessage message = new MqttMessage(content.getBytes());
-            message.setQos(qos);
-            sampleClient.publish(topic, message);
-            this.logger.info("Message published");
-            sampleClient.disconnect();
-            this.logger.info("Disconnected");
-            sampleClient.close();
+            mqttClient = new MqttClient(this.config.hostURL, clientId, persistence);
+            this.createConn(mqttClient);
+            mqttClient.setCallback(this);
+            while (true) {
+                String msg = this.sendMessageQueue.take();
+                this.logger.info("sending text " + msg);
+                mqttClient.publish("MCGate/HD_Say", msg.getBytes(), 0, false);
+            }
         } catch (MqttException me) {
             this.logger.info("reason " + me.getReasonCode());
             this.logger.info("msg " + me.getMessage());
@@ -45,6 +46,43 @@ public final class WGClient {
             this.logger.info("cause " + me.getCause());
             this.logger.info("excep " + me);
             me.printStackTrace();
+        } catch (InterruptedException e) {
+            this.logger.info("msg queue.take InterruptedException" + e);
+        }
+    }
+
+    private void createConn(MqttClient mqttClient) throws MqttException {
+        MqttConnectOptions connOpts = new MqttConnectOptions();
+        connOpts.setAutomaticReconnect(true);
+        this.logger.info("Connecting to broker: " + this.config.hostURL);
+        mqttClient.connect(connOpts);
+        this.logger.info("Connected");
+    }
+
+    public void sendTextMessageToChatroom(String user, String content) {
+        try {
+            this.sendMessageQueue.put("{\"user\":\"" + user + "\",\"content\":\"" + content + "\"}");
+        } catch (InterruptedException e) {
+            this.logger.info("msg queue.take InterruptedException" + e);
+        }
+    }
+
+    public void connectionLost(Throwable cause) {
+        System.out.println("connection to WeCraftManager lost: " + cause);
+    }
+
+    public void deliveryComplete(IMqttDeliveryToken token) {
+
+    }
+
+    public void messageArrived(String topic, MqttMessage message) throws Exception {
+        switch (topic) {
+        case "WeCraft/Say":
+            this.wecraft.broadcast(message.toString());
+            break;
+        default:
+            this.logger.info("recive unknown topic: " + topic);
+            break;
         }
     }
 }
