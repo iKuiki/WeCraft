@@ -1,8 +1,10 @@
 package cn.kuiki.mc;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -10,7 +12,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import cn.kuiki.mc.wgclient.WGClient;
 import cn.kuiki.mc.wgclient.WGConfig;
 
-public final class WeCraft extends JavaPlugin implements WeCraftInf,Listener {// 继承类
+public final class WeCraft extends JavaPlugin implements WeCraftInf, Listener {// 继承类
     private WGClient wgClient;
 
     @Override
@@ -22,7 +24,7 @@ public final class WeCraft extends JavaPlugin implements WeCraftInf,Listener {//
         this.wgClient = new WGClient(wgConfig, getLogger(), this);
         this.wgClient.start();
         getServer().getPluginManager().registerEvents(this, this);
-        this.wgClient.sendTextMessageToChatroom("系统", "测试消息");
+        this.wgClient.sendTextMessageToChatroom("WeCraft", "插件已启动");
     }
 
     @Override
@@ -33,23 +35,30 @@ public final class WeCraft extends JavaPlugin implements WeCraftInf,Listener {//
     @Override
     public void broadcast(String text) {
         this.getLogger().info("broadcast message: " + text);
+        Bukkit.broadcastMessage(text);
     }
 
     // 玩家进入游戏
-  @EventHandler
-  public void onJoin(PlayerJoinEvent event) {
-    this.wgClient.sendTextMessageToChatroom("","「"+event.getPlayer().getName() + "」进入了游戏");
-  }
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        this.wgClient.sendTextMessageToChatroom("", "「" + event.getPlayer().getName() + "」进入了游戏");
+    }
 
-  // 玩家离开游戏
-  @EventHandler
-  public void onQuit(PlayerQuitEvent event){
-    this.wgClient.sendTextMessageToChatroom("","「"+event.getPlayer().getName() + "」离开了游戏");
-  }
-  
-  // 玩家发送聊天信息
-  @EventHandler
-  public void onChat(AsyncPlayerChatEvent event){
-      this.wgClient.sendTextMessageToChatroom(event.getPlayer().getName(), event.getMessage());
-  }
+    // 玩家离开游戏
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        this.wgClient.sendTextMessageToChatroom("", "「" + event.getPlayer().getName() + "」离开了游戏");
+    }
+
+    // 玩家发送聊天信息
+    @EventHandler
+    public void onChat(AsyncPlayerChatEvent event) {
+        this.wgClient.sendTextMessageToChatroom(event.getPlayer().getName(), event.getMessage());
+    }
+
+    // 玩家死亡消息
+    @EventHandler
+    public void onDeath(PlayerDeathEvent event) {
+        this.wgClient.sendTextMessageToChatroom("", event.getDeathMessage());
+    }
 }
