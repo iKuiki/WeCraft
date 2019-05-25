@@ -16,14 +16,14 @@ public final class WGClient extends Thread implements MqttCallback {
 
     private Logger logger;
     private WGConfig config;
-    private LinkedBlockingQueue<String> sendMessageQueue;
+    private LinkedBlockingQueue<WGItem> sendMessageQueue;
     private WeCraftInf wecraft;
 
     public WGClient(WGConfig config, Logger logger, WeCraftInf wecraft) {
         this.config = config;
         this.logger = logger;
         this.wecraft = wecraft;
-        this.sendMessageQueue = new LinkedBlockingQueue<String>();
+        this.sendMessageQueue = new LinkedBlockingQueue<WGItem>();
     }
 
     public void run() {
@@ -35,9 +35,9 @@ public final class WGClient extends Thread implements MqttCallback {
             this.createConn(mqttClient);
             mqttClient.setCallback(this);
             while (true) {
-                String msg = this.sendMessageQueue.take();
+                WGItem msg = this.sendMessageQueue.take();
                 this.logger.info("sending text " + msg);
-                mqttClient.publish("MCGate/HD_Say", msg.getBytes(), 0, false);
+                mqttClient.publish("MCGate/" + msg.getTopic(), msg.getMessage().getBytes(), 0, false);
             }
         } catch (MqttException me) {
             this.logger.info("reason " + me.getReasonCode());
@@ -59,16 +59,70 @@ public final class WGClient extends Thread implements MqttCallback {
         this.logger.info("Connected");
     }
 
+    @Deprecated
     public void sendTextMessageToChatroom(String user, String content) {
         try {
-            this.sendMessageQueue.put("{\"user\":\"" + user + "\",\"content\":\"" + content + "\"}");
+            this.sendMessageQueue
+                    .put(new WGItem("HD_Say", "{\"user\":\"" + user + "\",\"content\":\"" + content + "\"}"));
+        } catch (InterruptedException e) {
+            this.logger.info("msg queue.take InterruptedException" + e);
+        }
+    }
+
+    public void sendRegisterMessageToChatroom() {
+        try {
+            this.sendMessageQueue
+                    .put(new WGItem("HD_Register", "{\"clientName\":\"" + this.config.getServerName() + "\"}"));
+        } catch (InterruptedException e) {
+            this.logger.info("msg queue.take InterruptedException" + e);
+        }
+    }
+
+    public void sendPlayerJoinMessageToChatroom(String playerName) {
+        try {
+            this.sendMessageQueue.put(new WGItem("HD_PlayerJoin", "{\"playerName\":\"" + playerName + "\"}"));
+        } catch (InterruptedException e) {
+            this.logger.info("msg queue.take InterruptedException" + e);
+        }
+    }
+
+    public void sendPlayerLeaveMessageToChatroom(String playerName) {
+        try {
+            this.sendMessageQueue.put(new WGItem("HD_PlayerLeave", "{\"playerName\":\"" + playerName + "\"}"));
+        } catch (InterruptedException e) {
+            this.logger.info("msg queue.take InterruptedException" + e);
+        }
+    }
+
+    public void sendPlayerDeathMessageToChatroom(String playerName, String deathMessage) {
+        try {
+            this.sendMessageQueue.put(new WGItem("HD_PlayerDeath",
+                    "{\"playerName\":\"" + playerName + "\",\"deathMessage\":\"" + deathMessage + "\"}"));
+        } catch (InterruptedException e) {
+            this.logger.info("msg queue.take InterruptedException" + e);
+        }
+    }
+
+    public void sendPlayerChatMessageToChatroom(String playerName, String chatMessage) {
+        try {
+            this.sendMessageQueue.put(new WGItem("HD_PlayerChat",
+                    "{\"playerName\":\"" + playerName + "\",\"chatMessage\":\"" + chatMessage + "\"}"));
+        } catch (InterruptedException e) {
+            this.logger.info("msg queue.take InterruptedException" + e);
+        }
+    }
+
+    public void sendPlayerAdvancementDoneMessageToChatroom(String playerName, String advancementKey) {
+        try {
+            this.sendMessageQueue.put(new WGItem("HD_PlayerAdvancementDone",
+                    "{\"playerName\":\"" + playerName + "\",\"advancementKey\":\"" + advancementKey + "\"}"));
         } catch (InterruptedException e) {
             this.logger.info("msg queue.take InterruptedException" + e);
         }
     }
 
     public void connectionLost(Throwable cause) {
-        System.out.println("connection to WeCraftManager lost: " + cause);
+        this.logger.info("connection to WeCraftManager lost: " + cause);
     }
 
     public void deliveryComplete(IMqttDeliveryToken token) {
