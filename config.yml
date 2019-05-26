@@ -1,2 +1,5 @@
 server-name: mc
 manager-host: tcp://sz.kuiki.cn:3564
+notify-join-and-leave: true
+notify-death: true
+notify-advancement: true

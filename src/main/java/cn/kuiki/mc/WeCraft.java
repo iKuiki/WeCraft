@@ -16,12 +16,19 @@ import cn.kuiki.mc.wgclient.WGConfig;
 public final class WeCraft extends JavaPlugin implements WeCraftInf, Listener {// 继承类
     private WGClient wgClient;
 
+    private Boolean notifyJoinAndLeave;
+    private Boolean notifyDeath;
+    private Boolean notifyAdvancement;
+
     @Override
     public void onEnable() {
         // 启用插件时自动发出
         this.saveDefaultConfig();
         FileConfiguration config = this.getConfig();
         WGConfig wgConfig = new WGConfig(config.getString("server-name"), config.getString("manager-host"));
+        this.notifyJoinAndLeave = config.getBoolean("notify-join-and-leave", true);
+        this.notifyDeath = config.getBoolean("notify-death", true);
+        this.notifyAdvancement = config.getBoolean("notify-advancement", true);
         this.wgClient = new WGClient(wgConfig, getLogger(), this);
         this.wgClient.sendRegisterMessageToChatroom();
         this.wgClient.start();
@@ -42,13 +49,17 @@ public final class WeCraft extends JavaPlugin implements WeCraftInf, Listener {/
     // 玩家进入游戏
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        this.wgClient.sendPlayerJoinMessageToChatroom(event.getPlayer().getName());
+        if (this.notifyJoinAndLeave) {
+            this.wgClient.sendPlayerJoinMessageToChatroom(event.getPlayer().getName());
+        }
     }
 
     // 玩家离开游戏
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        this.wgClient.sendPlayerLeaveMessageToChatroom(event.getPlayer().getName());
+        if (this.notifyJoinAndLeave) {
+            this.wgClient.sendPlayerLeaveMessageToChatroom(event.getPlayer().getName());
+        }
     }
 
     // 玩家发送聊天信息
@@ -60,16 +71,20 @@ public final class WeCraft extends JavaPlugin implements WeCraftInf, Listener {/
     // 玩家死亡消息
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
-        this.wgClient.sendPlayerDeathMessageToChatroom(event.getEntity().getName(), event.getDeathMessage());
+        if (this.notifyDeath) {
+            this.wgClient.sendPlayerDeathMessageToChatroom(event.getEntity().getName(), event.getDeathMessage());
+        }
     }
 
     // 玩家达成进度消息
     @EventHandler
     public void onAdvancementDone(PlayerAdvancementDoneEvent event) {
-        String key = event.getAdvancement().getKey().getKey();
-        if (!key.startsWith("recipes/")) {
-            // 如果不是因为解锁合成进度，则汇报
-            this.wgClient.sendPlayerAdvancementDoneMessageToChatroom(event.getPlayer().getName(), key);
+        if (this.notifyAdvancement) {
+            String key = event.getAdvancement().getKey().getKey();
+            if (!key.startsWith("recipes/")) {
+                // 如果不是因为解锁合成进度，则汇报
+                this.wgClient.sendPlayerAdvancementDoneMessageToChatroom(event.getPlayer().getName(), key);
+            }
         }
     }
 }
