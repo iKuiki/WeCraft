@@ -134,6 +134,9 @@ public final class WGClient extends Thread implements MqttCallback {
         case "WeCraft/Say":
             this.wecraft.broadcast(message.toString());
             break;
+        case "WeCraft/NeedLogin":
+            this.sendRegisterMessageToChatroom();
+            break;
         default:
             this.logger.info("recive unknown topic: " + topic);
             break;
