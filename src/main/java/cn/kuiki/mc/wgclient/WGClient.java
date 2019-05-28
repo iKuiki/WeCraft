@@ -121,6 +121,14 @@ public final class WGClient extends Thread implements MqttCallback {
         }
     }
 
+    public void sendPingMessageToChatroom(String playerName, String advancementKey) {
+        try {
+            this.sendMessageQueue.put(new WGItem("HD_Ping", "{}"));
+        } catch (InterruptedException e) {
+            this.logger.info("msg queue.take InterruptedException" + e);
+        }
+    }
+
     public void connectionLost(Throwable cause) {
         this.logger.info("connection to WeCraftManager lost: " + cause);
     }
