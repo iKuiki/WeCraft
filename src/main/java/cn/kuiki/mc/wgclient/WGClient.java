@@ -62,7 +62,7 @@ public final class WGClient extends Thread implements MqttCallback {
         @Override
         public void run() {
             if (mqttClient.isConnected()) {
-                WGItem msg = sendMessageQueue.remove();
+                WGItem msg = sendMessageQueue.poll();
                 while (msg != null) {
                     logger.info("sending text " + msg);
                     try {
@@ -70,16 +70,11 @@ public final class WGClient extends Thread implements MqttCallback {
                     } catch (MqttException e) {
                         e.printStackTrace();
                     }
-                    msg = sendMessageQueue.remove();
+                    msg = sendMessageQueue.poll();
                 }
             }
         }
     };
-
-    @Deprecated
-    public void sendTextMessageToChatroom(String user, String content) {
-        sendMessageQueue.add(new WGItem("HD_Say", "{\"user\":\"" + user + "\",\"content\":\"" + content + "\"}"));
-    }
 
     public void sendRegisterMessageToChatroom() throws MqttPersistenceException, MqttException {
         this.logger.info("register to server ");
@@ -87,31 +82,36 @@ public final class WGClient extends Thread implements MqttCallback {
         this.mqttClient.publish("MCGate/HD_Register", payload.getBytes(), 0, false);
     }
 
+    @Deprecated
+    public void sendTextMessageToChatroom(String user, String content) {
+        sendMessageQueue.offer(new WGItem("HD_Say", "{\"user\":\"" + user + "\",\"content\":\"" + content + "\"}"));
+    }
+
     public void sendPlayerJoinMessageToChatroom(String playerName) {
-        this.sendMessageQueue.add(new WGItem("HD_PlayerJoin", "{\"playerName\":\"" + playerName + "\"}"));
+        this.sendMessageQueue.offer(new WGItem("HD_PlayerJoin", "{\"playerName\":\"" + playerName + "\"}"));
     }
 
     public void sendPlayerLeaveMessageToChatroom(String playerName) {
-        this.sendMessageQueue.add(new WGItem("HD_PlayerLeave", "{\"playerName\":\"" + playerName + "\"}"));
+        this.sendMessageQueue.offer(new WGItem("HD_PlayerLeave", "{\"playerName\":\"" + playerName + "\"}"));
     }
 
     public void sendPlayerDeathMessageToChatroom(String playerName, String deathMessage) {
-        this.sendMessageQueue.add(new WGItem("HD_PlayerDeath",
+        this.sendMessageQueue.offer(new WGItem("HD_PlayerDeath",
                 "{\"playerName\":\"" + playerName + "\",\"deathMessage\":\"" + deathMessage + "\"}"));
     }
 
     public void sendPlayerChatMessageToChatroom(String playerName, String chatMessage) {
-        this.sendMessageQueue.add(new WGItem("HD_PlayerChat",
+        this.sendMessageQueue.offer(new WGItem("HD_PlayerChat",
                 "{\"playerName\":\"" + playerName + "\",\"chatMessage\":\"" + chatMessage + "\"}"));
     }
 
     public void sendPlayerAdvancementDoneMessageToChatroom(String playerName, String advancementKey) {
-        this.sendMessageQueue.add(new WGItem("HD_PlayerAdvancementDone",
+        this.sendMessageQueue.offer(new WGItem("HD_PlayerAdvancementDone",
                 "{\"playerName\":\"" + playerName + "\",\"advancementKey\":\"" + advancementKey + "\"}"));
     }
 
     public void sendPingMessageToChatroom(String playerName, String advancementKey) {
-        this.sendMessageQueue.add(new WGItem("HD_Ping", "{}"));
+        this.sendMessageQueue.offer(new WGItem("HD_Ping", "{}"));
     }
 
     public void connectionLost(Throwable cause) {
