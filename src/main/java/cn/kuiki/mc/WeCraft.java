@@ -1,5 +1,10 @@
 package cn.kuiki.mc;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.EventHandler;
@@ -10,6 +15,8 @@ import org.bukkit.event.player.PlayerAdvancementDoneEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.eclipse.paho.client.mqttv3.MqttException;
+
 import cn.kuiki.mc.wgclient.WGClient;
 import cn.kuiki.mc.wgclient.WGConfig;
 
@@ -19,6 +26,9 @@ public final class WeCraft extends JavaPlugin implements WeCraftInf, Listener {/
     private Boolean notifyJoinAndLeave;
     private Boolean notifyDeath;
     private Boolean notifyAdvancement;
+    private ScheduledExecutorService scheduleService = Executors.newSingleThreadScheduledExecutor();
+    private ScheduledFuture keepConnScheduledFuture;
+    private ScheduledFuture sendLoopScheduledFuture;
 
     @Override
     public void onEnable() {
@@ -29,15 +39,21 @@ public final class WeCraft extends JavaPlugin implements WeCraftInf, Listener {/
         this.notifyJoinAndLeave = config.getBoolean("notify-join-and-leave", true);
         this.notifyDeath = config.getBoolean("notify-death", true);
         this.notifyAdvancement = config.getBoolean("notify-advancement", true);
-        this.wgClient = new WGClient(wgConfig, getLogger(), this);
-        this.wgClient.sendRegisterMessageToChatroom();
-        this.wgClient.start();
+        try {
+            this.wgClient = new WGClient(wgConfig, getLogger(), this);
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+        keepConnScheduledFuture = scheduleService.scheduleAtFixedRate(wgClient.keepConn, 0, 5, TimeUnit.SECONDS);
+        sendLoopScheduledFuture = scheduleService.scheduleAtFixedRate(wgClient.sendLoop, 1, 1, TimeUnit.SECONDS);
         getServer().getPluginManager().registerEvents(this, this);
     }
 
     @Override
     public void onDisable() {
         // 关闭插件时自动发出
+        sendLoopScheduledFuture.cancel(true);
+        keepConnScheduledFuture.cancel(true);
     }
 
     @Override
