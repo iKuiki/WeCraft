@@ -62,6 +62,11 @@ public final class WeCraft extends JavaPlugin implements WeCraftInf, Listener {/
         Bukkit.broadcastMessage(text);
     }
 
+    @Override
+    public void dispatchCommand(String text) {
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), text);
+    }
+
     // 玩家进入游戏
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
