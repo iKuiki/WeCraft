@@ -62,7 +62,7 @@ public final class WGClient extends Thread implements MqttCallback {
         @Override
         public void run() {
             if (mqttClient.isConnected()) {
-                WGItem msg = sendMessageQueue.peek();
+                WGItem msg = sendMessageQueue.remove();
                 while (msg != null) {
                     logger.info("sending text " + msg);
                     try {
@@ -70,7 +70,7 @@ public final class WGClient extends Thread implements MqttCallback {
                     } catch (MqttException e) {
                         e.printStackTrace();
                     }
-                    msg = sendMessageQueue.peek();
+                    msg = sendMessageQueue.remove();
                 }
             }
         }
