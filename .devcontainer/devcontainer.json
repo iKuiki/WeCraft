@@ -3,6 +3,10 @@
 	"dockerFile": "Dockerfile",
 	"extensions": [
 		"vscjava.vscode-java-pack",
-		"redhat.vscode-xml"
+		"redhat.vscode-xml",
+		"yzhang.markdown-all-in-one",
+		"davidanson.vscode-markdownlint",
+		"wmaurer.change-case",
+		"asuka.insertnumbers"
 	]
 }
