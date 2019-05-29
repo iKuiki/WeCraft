@@ -8,5 +8,8 @@
 		"davidanson.vscode-markdownlint",
 		"wmaurer.change-case",
 		"asuka.insertnumbers"
-	]
+	],
+	"settings": {
+		"java.home": "/docker-java-home"
+	}
 }
